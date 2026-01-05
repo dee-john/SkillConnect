@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Register — SkillConnect</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">SkillConnect</div>
+
+        <nav class="nav" id="navMenu">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="profile.html" class="nav-link">Profile</a>
+          <a href="chat.html" class="nav-link">Chats</a>
+          <a href="login.html" class="nav-link">Login</a>
+          <a href="register.html" class="nav-link">Register</a>
+        </nav>
+
+        <button class="hamburger" id="menu-toggle">☰</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="container form-section">
+        <form id="registerForm" class="card form-card" autocomplete="off">
+          <h2>Create account</h2>
+
+          <label class="image-upload">
+            <img
+              id="profilePreview"
+              src="https://via.placeholder.com/120"
+              alt="profile preview"
+            />
+            <input id="profileImage" type="file" accept="image/*" />
+            <span class="tiny">Upload profile photo</span>
+          </label>
+
+          <input id="name" type="text" placeholder="Full name" required />
+          <input
+            id="username"
+            type="text"
+            placeholder="Username (unique)"
+            required
+          />
+          <input
+            id="password"
+            type="password"
+            placeholder="Password"
+            required
+          />
+          <select id="skillCategory" required>
+            <option value="">Select skill category</option>
+            <option>Tech</option>
+            <option>Fashion</option>
+            <option>Catering</option>
+            <option>Art</option>
+            <option>Photography</option>
+            <option>Others</option>
+          </select>
+          <textarea
+            id="bio"
+            rows="3"
+            placeholder="Short bio (optional)"
+          ></textarea>
+
+          <button class="btn primary" type="submit">Register</button>
+          <p class="muted">
+            Already have an account? <a href="login.html">Login</a>
+          </p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>© 2025 SkillConnect</p>
+      </div>
+    </footer>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // ✅ Mobile menu toggle
+        const toggleBtn = document.getElementById("menu-toggle");
+        const navMenu = document.getElementById("navMenu");
+        toggleBtn?.addEventListener("click", () => {
+          navMenu.classList.toggle("show");
+        });
+
+        const profileInput = document.getElementById("profileImage");
+        const previewImg = document.getElementById("profilePreview");
+
+        // ✅ Show image preview on upload
+        profileInput.addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = () => {
+              previewImg.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+
+        // ✅ Registration logic
+        const form = document.getElementById("registerForm");
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+
+          const name = document.getElementById("name").value.trim();
+          const username = document.getElementById("username").value.trim();
+          const password = document.getElementById("password").value.trim();
+          const skill = document.getElementById("skillCategory").value;
+          const bio = document.getElementById("bio").value.trim();
+          const avatar = previewImg.src; // ✅ store image here
+
+          if (!name || !username || !password || !skill) {
+            alert("Please fill all required fields");
+            return;
+          }
+
+          let users = JSON.parse(localStorage.getItem("allUsers")) || [];
+          if (users.find((u) => u.username === username)) {
+            alert("Username already exists!");
+            return;
+          }
+
+          const newUser = {
+            name,
+            username,
+            password,
+            skill,
+            bio,
+            avatar, // ✅ fixed key for profile photo
+            email: "",
+            phone: "",
+          };
+
+          users.push(newUser);
+          localStorage.setItem("allUsers", JSON.stringify(users));
+          localStorage.setItem("currentUser", JSON.stringify(newUser));
+
+          alert("✅ Account created successfully!");
+          window.location.href = "profile.html";
+        });
+      });
+    </script>
+  </body>
+</html>

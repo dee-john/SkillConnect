@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Login — SkillConnect</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <!-- Header -->
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">SkillConnect</div>
+
+        <nav class="nav" id="navMenu">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="profile.html" class="nav-link">Profile</a>
+          <a href="chat.html" class="nav-link">Chats</a>
+          <a href="login.html" class="nav-link active">Login</a>
+          <a href="register.html" class="nav-link">Register</a>
+        </nav>
+
+        <button class="hamburger" id="menu-toggle">☰</button>
+      </div>
+    </header>
+
+    <!-- Login Section -->
+    <main>
+      <section class="container form-section">
+        <form id="loginForm" class="card form-card" autocomplete="off">
+          <h2>Welcome Back</h2>
+          <input id="username" type="text" placeholder="Username" required />
+          <input
+            id="password"
+            type="password"
+            placeholder="Password"
+            required
+          />
+          <button type="submit" class="btn primary">Login</button>
+
+          <p class="muted">
+            Don’t have an account? <a href="register.html">Register</a>
+          </p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>© 2025 SkillConnect</p>
+      </div>
+    </footer>
+
+    <!-- JS -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // ✅ Mobile menu toggle
+        const toggleBtn = document.getElementById("menu-toggle");
+        const navMenu = document.getElementById("navMenu");
+        toggleBtn?.addEventListener("click", () => {
+          navMenu.classList.toggle("show");
+        });
+
+        // ✅ Login logic
+        const form = document.getElementById("loginForm");
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+
+          const username = document.getElementById("username").value.trim();
+          const password = document.getElementById("password").value.trim();
+
+          const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+          const foundUser = allUsers.find(
+            (u) => u.username === username && u.password === password
+          );
+
+          if (!foundUser) {
+            alert("❌ Invalid username or password!");
+            return;
+          }
+
+          // ✅ Save full user info (with avatar, bio, etc.)
+          localStorage.setItem("currentUser", JSON.stringify(foundUser));
+
+          alert(`✅ Welcome back, ${foundUser.name || foundUser.username}!`);
+          window.location.href = "profile.html";
+        });
+      });
+    </script>
+  </body>
+</html>

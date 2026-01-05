@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillConnect | Chat</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* ====== Chat Page Styles ====== */
+      .chat-container {
+        display: flex;
+        flex-direction: column;
+        max-width: 700px;
+        margin: 2rem auto;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .chat-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: #003366;
+        color: #fff;
+        padding: 1rem;
+      }
+
+      .chat-header img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #fff;
+      }
+
+      .chat-messages {
+        flex-grow: 1;
+        padding: 1rem;
+        height: 400px;
+        overflow-y: auto;
+        background: #f9fafb;
+      }
+
+      .message {
+        margin: 0.5rem 0;
+        padding: 0.6rem 1rem;
+        border-radius: 16px;
+        max-width: 70%;
+      }
+
+      .message.user {
+        background: #003366;
+        color: #fff;
+        align-self: flex-end;
+        margin-left: auto;
+      }
+
+      .message.other {
+        background: #e4e6eb;
+        color: #111;
+        align-self: flex-start;
+      }
+
+      .chat-input {
+        display: flex;
+        padding: 0.8rem;
+        border-top: 1px solid #ddd;
+        background: #fff;
+      }
+
+      .chat-input input {
+        flex: 1;
+        padding: 0.8rem;
+        border: 1px solid #ccc;
+        border-radius: 20px;
+        outline: none;
+      }
+
+      .chat-input button {
+        margin-left: 0.6rem;
+        background: #003366;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 18px;
+        cursor: pointer;
+      }
+
+      .chat-input button:hover {
+        background: #0055aa;
+      }
+
+      @media (max-width: 768px) {
+        .chat-container {
+          border-radius: 0;
+          margin: 0;
+          height: 100vh;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Header -->
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">SkillConnect</div>
+
+        <nav class="nav" id="navMenu">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="profile.html" class="nav-link">Profile</a>
+          <a href="chat.html" class="nav-link active">Chats</a>
+          <a href="login.html" class="nav-link" id="logoutBtn">Logout</a>
+        </nav>
+
+        <button class="hamburger" id="menu-toggle">☰</button>
+      </div>
+    </header>
+
+    <!-- Chat Section -->
+    <section class="chat-container">
+      <div class="chat-header">
+        <img
+          id="chatUserAvatar"
+          src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+          alt="User Avatar"
+        />
+        <div>
+          <h3 id="chatUserName">Your Chat</h3>
+          <p style="font-size: 0.85rem; opacity: 0.8">
+            Connect with professionals
+          </p>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chatMessages"></div>
+
+      <div class="chat-input">
+        <input
+          type="text"
+          id="messageInput"
+          placeholder="Type a message..."
+          autocomplete="off"
+        />
+        <button id="sendBtn">➤</button>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>© 2025 SkillConnect. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script>
+      const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+      const chatMessages = document.getElementById("chatMessages");
+      const messageInput = document.getElementById("messageInput");
+      const sendBtn = document.getElementById("sendBtn");
+      const avatar = document.getElementById("chatUserAvatar");
+      const nameEl = document.getElementById("chatUserName");
+
+      // Load user info
+      function loadChatUser() {
+        if (!currentUser.username) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        avatar.src =
+          currentUser.avatar ||
+          "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+        nameEl.textContent = currentUser.name || currentUser.username;
+      }
+
+      // Load previous chats
+      let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+
+      function renderMessages() {
+        chatMessages.innerHTML = chatHistory
+          .map(
+            (m) => `
+          <div class="message ${
+            m.sender === currentUser.username ? "user" : "other"
+          }">
+            ${m.text}
+          </div>
+        `
+          )
+          .join("");
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      // Send message
+      sendBtn.addEventListener("click", sendMessage);
+      messageInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+      });
+
+      function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text) return;
+
+        const newMsg = {
+          sender: currentUser.username,
+          text,
+          time: new Date().toISOString(),
+        };
+
+        chatHistory.push(newMsg);
+        localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+        messageInput.value = "";
+        renderMessages();
+      }
+
+      // Logout
+      document.getElementById("logoutBtn")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("currentUser");
+        window.location.href = "login.html";
+      });
+
+      // Mobile menu toggle
+      const menuToggle = document.getElementById("menu-toggle");
+      const navMenu = document.getElementById("navMenu");
+      menuToggle?.addEventListener("click", () => {
+        navMenu.classList.toggle("show");
+      });
+
+      loadChatUser();
+      renderMessages();
+    </script>
+  </body>
+</html>

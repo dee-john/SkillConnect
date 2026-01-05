@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillConnect | Home</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* small page-specific adjustments (keeps your main style.css intact) */
+      .hero {
+        padding: 48px 0;
+        background: linear-gradient(135deg, #081b4b, #3a5bb3);
+        color: #fff;
+      }
+      .hero-text h1 {
+        margin: 0 0 8px;
+        font-size: 1.6rem;
+      }
+      .search-bar {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin: 20px auto;
+        max-width: 820px;
+        padding: 12px;
+        background: #fff;
+        border-radius: 999px;
+        box-shadow: 0 6px 18px rgba(12, 18, 50, 0.06);
+      }
+      .search-bar input,
+      .search-bar select {
+        border: 0;
+        background: transparent;
+        padding: 10px 14px;
+        outline: none;
+        width: 280px;
+      }
+      .posts-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 18px 12px 60px;
+      }
+      .post-card {
+        background: #fff;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 6px 18px rgba(12, 18, 50, 0.06);
+        transition: transform 0.2s;
+      }
+      .post-card:hover {
+        transform: translateY(-6px);
+      }
+      .post-header {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 12px;
+      }
+      .user-thumb {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #29b6f6;
+        cursor: pointer;
+      }
+      .post-media {
+        width: 100%;
+        max-height: 420px;
+        object-fit: cover;
+        display: block;
+      }
+      .post-body {
+        padding: 12px;
+        color: #081b4b;
+        line-height: 1.4;
+      }
+      .post-actions {
+        display: flex;
+        gap: 12px;
+        padding: 10px 12px;
+        border-top: 1px solid #f0f3f8;
+      }
+      .post-actions button {
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        padding: 6px 10px;
+        border-radius: 8px;
+      }
+      .post-actions button:hover {
+        background: rgba(10, 27, 75, 0.04);
+      }
+      @media (max-width: 900px) {
+        .search-bar input {
+          width: 100%;
+        }
+        .hero-text h1 {
+          font-size: 1.2rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">SkillConnect</div>
+
+        <nav class="nav" id="navMenu">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="profile.html" class="nav-link">Profile</a>
+          <a href="chat.html" class="nav-link">Chats</a>
+          <a href="login.html" class="nav-link" id="logoutBtn">Logout</a>
+        </nav>
+
+        <!-- Mobile Toggle -->
+        <button class="hamburger" id="menu-toggle">☰</button>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-text">
+          <h1>Welcome to SkillConnect</h1>
+          <p>
+            Connect with skilled professionals, showcase your work, and grow
+            your network.
+          </p>
+          <div class="hero-cta">
+            <a href="register.html" class="btn primary">Get Started</a>
+            <a href="login.html" class="btn ghost">Login</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Search -->
+    <div class="search-bar">
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Search for skills, names or descriptions..."
+      />
+      <select id="categorySelect">
+        <option value="">All Categories</option>
+        <option value="Tech">Tech</option>
+        <option value="Fashion">Fashion</option>
+        <option value="Catering">Catering</option>
+        <option value="Art">Art</option>
+        <option value="Photography">Photography</option>
+        <option value="Others">Others</option>
+      </select>
+    </div>
+
+    <!-- Posts Feed -->
+    <section class="container feed-section">
+      <h2 class="section-title">Latest Works</h2>
+      <div id="postsContainer" class="posts-grid"></div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>&copy; 2025 SkillConnect. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script>
+      /* --------------- Helper utilities --------------- */
+      const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+      const POSTS_PREFIX = "posts_"; // per-user posts key prefix
+      const GLOBAL_KEY = "global_posts"; // global feed (optional)
+      const ALLPOSTS_KEY = "allPosts"; // cached merged feed
+
+      function readJSON(key) {
+        try {
+          return JSON.parse(localStorage.getItem(key)) || [];
+        } catch (e) {
+          return [];
+        }
+      }
+      function writeJSON(key, val) {
+        localStorage.setItem(key, JSON.stringify(val));
+      }
+
+      /* --------------- Build merged feed --------------- */
+      function getAllPostsMerged() {
+        // gather posts_<username> entries
+        let merged = [];
+
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key) continue;
+          if (key.startsWith(POSTS_PREFIX)) {
+            const arr = readJSON(key);
+            // ensure each post has an id (use date fallback)
+            arr.forEach((p) => {
+              if (!p.id)
+                p.id = p.date || "id_" + Math.random().toString(36).slice(2, 9);
+            });
+            merged = merged.concat(arr);
+          }
+        }
+
+        // include global_posts if present (legacy/other)
+        const global = readJSON(GLOBAL_KEY);
+        global.forEach((p) => {
+          if (!p.id)
+            p.id = p.date || "id_" + Math.random().toString(36).slice(2, 9);
+        });
+        merged = merged.concat(global);
+
+        // dedupe by id (keep newest instance)
+        const byId = {};
+        merged.forEach((p) => {
+          byId[p.id] = p;
+        });
+
+        // convert back to array and sort newest first (by date or id fallback)
+        const result = Object.values(byId).sort((a, b) => {
+          const da = a.date ? new Date(a.date).getTime() : 0;
+          const db = b.date ? new Date(b.date).getTime() : 0;
+          return db - da;
+        });
+
+        // cache it
+        writeJSON(ALLPOSTS_KEY, result);
+        return result;
+      }
+
+      /* --------------- Render feed --------------- */
+      function renderFeed() {
+        const container = document.getElementById("postsContainer");
+        if (!container) return;
+        const posts = getAllPostsMerged();
+        container.innerHTML = "";
+
+        if (!posts || posts.length === 0) {
+          container.innerHTML =
+            '<p class="muted">No posts yet. Be the first to share your work!</p>';
+          return;
+        }
+
+        // get current filter/search
+        const search = (
+          document.getElementById("searchInput")?.value || ""
+        ).toLowerCase();
+        const cat = (
+          document.getElementById("categorySelect")?.value || ""
+        ).toLowerCase();
+
+        posts.forEach((post, idx) => {
+          // filtering
+          const matchesSearch =
+            !search ||
+            (post.text && post.text.toLowerCase().includes(search)) ||
+            (post.name && post.name.toLowerCase().includes(search));
+          const matchesCat =
+            !cat || (post.category && post.category.toLowerCase() === cat);
+          if (!matchesSearch || !matchesCat) return;
+
+          const card = document.createElement("article");
+          card.className = "post-card";
+          card.dataset.id = post.id;
+
+          // ensure avatar & required props
+          const avatar =
+            post.avatar ||
+            "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+          const displayName = post.name || post.username || "Unknown";
+          const caption = post.text || post.desc || "";
+
+          card.innerHTML = `
+            <div class="post-header">
+              <img src="${escapeHtml(
+                avatar
+              )}" class="user-thumb" alt="avatar" onclick="openProfile('${encodeURIComponent(
+            post.username || ""
+          )}')"/>
+              <div>
+                <a href="profile.html?user=${encodeURIComponent(
+                  post.username || ""
+                )}" class="name-link">${escapeHtml(displayName)}</a>
+                <div class="post-meta">@${escapeHtml(post.username || "")}${
+            post.category ? " • " + escapeHtml(post.category) : ""
+          }</div>
+              </div>
+            </div>
+
+            <img src="${escapeHtml(
+              post.image
+            )}" class="post-media" alt="post media" />
+            <div class="post-body">${escapeHtml(caption)}</div>
+
+            <div class="post-actions">
+              <button class="love-btn" data-id="${
+                post.id
+              }">❤️ Love <span class="count">${post.likes || 0}</span></button>
+              <button class="comment-btn" data-id="${
+                post.id
+              }">💬 Comment <span class="count">${
+            (post.comments || []).length
+          }</span></button>
+              <button class="share-btn" data-id="${post.id}">🔗 Share</button>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+
+        // Attach delegated listeners
+        attachFeedListeners();
+      }
+
+      /* --------------- Event handlers (delegated) --------------- */
+      function attachFeedListeners() {
+        // love
+        document.querySelectorAll(".love-btn").forEach((btn) => {
+          btn.onclick = (e) => {
+            const id = btn.dataset.id;
+            if (!id) return;
+            handleLike(id, btn);
+          };
+        });
+
+        // comment
+        document.querySelectorAll(".comment-btn").forEach((btn) => {
+          btn.onclick = (e) => {
+            const id = btn.dataset.id;
+            handleComment(id);
+          };
+        });
+
+        // share
+        document.querySelectorAll(".share-btn").forEach((btn) => {
+          btn.onclick = (e) => {
+            const id = btn.dataset.id;
+            handleShare(id);
+          };
+        });
+      }
+
+      /* --------------- Like logic (no duplication) --------------- */
+      function handleLike(postId, btnElement) {
+        // update cached merged array
+        const all = readJSON(ALLPOSTS_KEY);
+        const idx = all.findIndex((p) => p.id === postId);
+        if (idx === -1) {
+          // fallback: rebuild merged list then find
+          getAllPostsMerged();
+          const fresh = readJSON(ALLPOSTS_KEY);
+          const fidx = fresh.findIndex((p) => p.id === postId);
+          if (fidx === -1) return;
+          all.splice(0, all.length, ...fresh);
+        }
+
+        // increment like in merged list
+        const post = all.find((p) => p.id === postId);
+        post.likes = (post.likes || 0) + 1;
+
+        // persist merged/global
+        writeJSON(ALLPOSTS_KEY, all);
+        writeJSON(GLOBAL_KEY, all);
+
+        // also update the original user's posts_<username> array if present
+        const username = post.username;
+        if (username) {
+          const key = POSTS_PREFIX + username;
+          const userPosts = readJSON(key);
+          const upIndex = userPosts.findIndex(
+            (p) => p.id === postId || p.date === post.date
+          );
+          if (upIndex !== -1) {
+            userPosts[upIndex].likes = post.likes;
+            writeJSON(key, userPosts);
+          } else {
+            // if it's not there, try to replace by matching image/date
+            const byDate = userPosts.findIndex(
+              (p) => p.date && post.date && p.date === post.date
+            );
+            if (byDate !== -1) {
+              userPosts[byDate].likes = post.likes;
+              writeJSON(key, userPosts);
+            }
+          }
+        }
+
+        // update UI count without re-rendering entire feed (prevents duplicates)
+        if (btnElement) {
+          const span = btnElement.querySelector(".count");
+          if (span) span.textContent = post.likes;
+        } else {
+          renderFeed();
+        }
+      }
+
+      /* --------------- Comment & Share --------------- */
+      function handleComment(postId) {
+        if (!currentUser.username) {
+          alert("Please login to comment.");
+          return;
+        }
+        const text = prompt("Write your comment:");
+        if (!text) return;
+
+        // update merged/global
+        const all = readJSON(ALLPOSTS_KEY);
+        const post = all.find((p) => p.id === postId);
+        if (!post) {
+          renderFeed();
+          return;
+        }
+        post.comments = post.comments || [];
+        post.comments.push({
+          user: currentUser.username,
+          text,
+          date: new Date().toISOString(),
+        });
+        writeJSON(ALLPOSTS_KEY, all);
+        writeJSON(GLOBAL_KEY, all);
+
+        // also update per-user list if possible
+        const username = post.username;
+        if (username) {
+          const key = POSTS_PREFIX + username;
+          const userPosts = readJSON(key);
+          const upIndex = userPosts.findIndex(
+            (p) => p.id === postId || (p.date && p.date === post.date)
+          );
+          if (upIndex !== -1) {
+            userPosts[upIndex] = post;
+            writeJSON(key, userPosts);
+          }
+        }
+
+        // re-render to update comment counts
+        renderFeed();
+      }
+
+      function handleShare(postId) {
+        const url = location.origin + location.pathname + `?post=${postId}`;
+        navigator.clipboard?.writeText(url).then(
+          () => alert("Post link copied to clipboard!"),
+          () => alert("Copy not supported")
+        );
+      }
+
+      /* --------------- Navigation helpers --------------- */
+      function openProfile(username) {
+        const u = decodeURIComponent(username || "");
+        if (!u) return;
+        window.location.href = `profile.html?user=${encodeURIComponent(u)}`;
+      }
+
+      /* --------------- Utility --------------- */
+      function escapeHtml(s) {
+        if (!s && s !== 0) return "";
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      /* --------------- Search & filter wiring --------------- */
+      document
+        .getElementById("searchInput")
+        ?.addEventListener("input", renderFeed);
+      document
+        .getElementById("categorySelect")
+        ?.addEventListener("change", renderFeed);
+
+      /* --------------- Mobile menu toggle --------------- */
+      const menuToggle = document.getElementById("menu-toggle");
+      const nav = document.querySelector(".nav");
+      menuToggle?.addEventListener("click", () => nav.classList.toggle("show"));
+
+      /* --------------- Logout wiring (keeps behavior consistent) --------------- */
+      document.getElementById("logoutBtn")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        localStorage.removeItem("currentUser");
+        window.location.href = "login.html";
+      });
+
+      /* --------------- Initialize --------------- */
+      // recompute and render feed
+      renderFeed();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkillConnect | Profile</title>
+    <link rel="stylesheet" href="style.css" />
+
+    <style>
+      body {
+        background: #f4f6fb;
+        font-family: "Segoe UI", sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      .profile-header {
+        background: linear-gradient(135deg, #003366, #0055aa);
+        color: #fff;
+        text-align: center;
+        padding: 2rem 1rem;
+        border-radius: 0 0 30px 30px;
+      }
+
+      .profile-avatar img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid #fff;
+        object-fit: cover;
+        margin-bottom: 1rem;
+      }
+
+      .profile-content {
+        margin: 2rem auto;
+        display: grid;
+        gap: 1.5rem;
+        max-width: 700px;
+        padding: 0 1rem;
+      }
+
+      .contact-card,
+      .work-card {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+      }
+
+      .contact-card input,
+      .work-card input,
+      .contact-card textarea,
+      .work-card textarea {
+        width: 100%;
+        margin: 0.5rem 0;
+        padding: 0.8rem;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+      }
+
+      .contact-card button,
+      .work-card button {
+        background: #003366;
+        color: #fff;
+        border: none;
+        padding: 0.8rem 1.2rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: 0.3s;
+      }
+
+      .contact-card button:hover,
+      .work-card button:hover {
+        background: #0055aa;
+      }
+
+      /* Post styling (same as homepage) */
+      .post {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        margin-top: 1.5rem;
+        overflow: hidden;
+      }
+
+      .post-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 15px;
+      }
+
+      .post-header img {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        object-fit: cover;
+      }
+
+      .post-header .user-info {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .post-header .user-info p {
+        margin: 0;
+      }
+
+      .post-header .name-link {
+        font-weight: 600;
+        color: #003366;
+      }
+
+      .post-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .post p {
+        padding: 0.8rem 1rem;
+        color: #333;
+      }
+
+      .post-actions {
+        display: flex;
+        justify-content: space-around;
+        padding: 0.6rem 1rem;
+        border-top: 1px solid #eee;
+      }
+
+      .post-actions button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        transition: color 0.2s ease;
+      }
+
+      .post-actions button:hover {
+        color: #e63946;
+      }
+
+      @media (max-width: 768px) {
+        body {
+          overflow-x: hidden;
+        }
+
+        .profile-content {
+          padding: 0 0.75rem;
+        }
+
+        .post-image {
+          max-height: 280px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <div class="brand">SkillConnect</div>
+
+        <nav class="nav">
+          <a href="index.html" class="nav-link">Home</a>
+          <a href="profile.html" class="nav-link active">Profile</a>
+          <a href="chat.html" class="nav-link">Chats</a>
+          <a href="login.html" class="nav-link logout-link">Logout</a>
+        </nav>
+
+        <button class="hamburger" id="menu-toggle">☰</button>
+      </div>
+    </header>
+
+    <section class="profile-header">
+      <div class="profile-avatar">
+        <img id="profilePicture" src="" alt="Profile Picture" />
+      </div>
+      <h2 id="displayName">User Profile</h2>
+      <p id="displayUsername">@username</p>
+    </section>
+
+    <section class="profile-content">
+      <div class="contact-card">
+        <h3>Contact Info</h3>
+        <input type="email" id="email" placeholder="Email" />
+        <input type="tel" id="phone" placeholder="Phone Number" />
+        <textarea id="bio" placeholder="Short bio..."></textarea>
+        <button id="saveProfile">Save Profile</button>
+      </div>
+
+      <div class="work-card">
+        <h3>My Works</h3>
+        <input type="file" id="workImage" />
+        <textarea id="workText" placeholder="Describe your work..."></textarea>
+        <button id="postWork">Post Work</button>
+      </div>
+
+      <div id="userPosts"></div>
+    </section>
+
+    <script>
+      /* ---------- Robust Profile script (replace existing profile script) ---------- */
+
+      (function () {
+        // helper keys (your project uses different keys in places)
+        const SC_USERS_KEY = "sc_users";
+        const ALL_USERS_KEY = "allUsers"; // some files use this
+        const CURRENT_KEY = "currentUser";
+        const USER_POSTS_PREFIX = "posts_";
+        const ALL_POSTS_KEY = "allPosts";
+
+        // defaults
+        const DEFAULT_AVATAR =
+          "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+        // read raw currentUser value
+        let rawCurrent = JSON.parse(localStorage.getItem(CURRENT_KEY)) || null;
+
+        // load candidate user lists
+        const scUsers = JSON.parse(localStorage.getItem(SC_USERS_KEY)) || [];
+        const allUsers = JSON.parse(localStorage.getItem(ALL_USERS_KEY)) || [];
+
+        // returns a normalized full user object (never null)
+        function resolveCurrentUser(raw) {
+          if (!raw) return null;
+
+          // If raw is a string (older code may store username only)
+          if (typeof raw === "string") {
+            const username = raw;
+            // search sc_users then allUsers
+            const found =
+              scUsers.find((u) => u.username === username) ||
+              allUsers.find((u) => u.username === username) ||
+              null;
+            if (found) return Object.assign({}, found);
+            // if not found, return object with username only
+            return { username };
+          }
+
+          // If raw is an object, prefer the object but fill missing data from sc_users/allUsers
+          if (typeof raw === "object") {
+            if (raw.username) {
+              const found =
+                scUsers.find((u) => u.username === raw.username) ||
+                allUsers.find((u) => u.username === raw.username) ||
+                null;
+              // merge found data into raw, without overwriting existing raw props
+              if (found) return Object.assign({}, found, raw);
+            }
+            return Object.assign({}, raw);
+          }
+
+          return null;
+        }
+
+        // try many common fields for avatar
+        function getAvatar(user) {
+          if (!user) return DEFAULT_AVATAR;
+          return (
+            user.avatar ||
+            user.image ||
+            user.photo ||
+            user.profileImage ||
+            user.imageData ||
+            user.img ||
+            user.picture ||
+            user.photoData ||
+            DEFAULT_AVATAR
+          );
+        }
+
+        // save updated user object back to storage consistently
+        function persistUser(user) {
+          if (!user || !user.username) return;
+          // update sc_users
+          const uidx = scUsers.findIndex((u) => u.username === user.username);
+          if (uidx !== -1) {
+            scUsers[uidx] = Object.assign({}, scUsers[uidx], user);
+            localStorage.setItem(SC_USERS_KEY, JSON.stringify(scUsers));
+          }
+          // update allUsers
+          const aidx = allUsers.findIndex((u) => u.username === user.username);
+          if (aidx !== -1) {
+            allUsers[aidx] = Object.assign({}, allUsers[aidx], user);
+            localStorage.setItem(ALL_USERS_KEY, JSON.stringify(allUsers));
+          }
+          // update currentUser
+          localStorage.setItem(CURRENT_KEY, JSON.stringify(user));
+        }
+
+        // resolved current user we will work with
+        let currentUser = resolveCurrentUser(rawCurrent);
+
+        // UI elements (must match your page)
+        const displayName = document.getElementById("displayName");
+        const displayUsername = document.getElementById("displayUsername");
+        const profilePicture = document.getElementById("profilePicture");
+        const emailInput = document.getElementById("email");
+        const phoneInput = document.getElementById("phone");
+        const bioInput = document.getElementById("bio");
+        const saveBtn = document.getElementById("saveProfile");
+        const postBtn = document.getElementById("postWork");
+        const userPostsContainer = document.getElementById("userPosts");
+
+        // If no logged-in user, redirect to login
+        if (!currentUser || !currentUser.username) {
+          // ensure currentUser cleared if corrupted
+          localStorage.removeItem(CURRENT_KEY);
+          alert("Please login first.");
+          window.location.href = "login.html";
+          return;
+        }
+
+        // Render profile header & contact
+        function renderProfileHeader() {
+          displayName.textContent =
+            currentUser.name || currentUser.fullname || "User Profile";
+          displayUsername.textContent = "@" + (currentUser.username || "");
+          profilePicture.src = getAvatar(currentUser);
+          emailInput.value = currentUser.email || "";
+          phoneInput.value = currentUser.phone || "";
+          bioInput.value = currentUser.bio || currentUser.bioText || "";
+        }
+
+        // load user's posts from posts_<username>
+        function loadUserPosts() {
+          if (!currentUser || !currentUser.username) return;
+          const key = USER_POSTS_PREFIX + currentUser.username;
+          const posts = JSON.parse(localStorage.getItem(key)) || [];
+          // clear existing
+          userPostsContainer.innerHTML = "";
+          if (!posts.length) return;
+
+          posts.forEach((post, idx) => {
+            const el = document.createElement("div");
+            el.className = "post";
+            // ensure post has date/id to uniquely identify it
+            if (!post.date) post.date = new Date().toISOString();
+            if (!post._id) post._id = `${currentUser.username}_${post.date}`;
+
+            const html = `
+        <div class="post-header">
+          <img src="${getAvatar(currentUser)}" alt="avatar" />
+          <div class="user-info">
+            <a href="profile.html?user=${encodeURIComponent(
+              currentUser.username
+            )}" class="name-link">${escapeHtml(
+              currentUser.name || currentUser.username
+            )}</a>
+            <p class="muted">@${escapeHtml(currentUser.username)}</p>
+          </div>
+        </div>
+        <img src="${post.image}" class="post-image" />
+        <p>${escapeHtml(post.text || post.desc || "")}</p>
+        <div class="post-actions">
+          <button data-idx="${idx}" data-action="like">❤️ Love (${
+              post.likes || 0
+            })</button>
+          <button data-idx="${idx}" data-action="comment">💬 Comment</button>
+          <button data-idx="${idx}" data-action="share">🔗 Share</button>
+          <button data-idx="${idx}" data-action="delete">🗑️ Delete</button>
+        </div>
+      `;
+            el.innerHTML = html;
+            userPostsContainer.appendChild(el);
+          });
+
+          // attach event delegation for posts in profile
+          userPostsContainer
+            .querySelectorAll(".post-actions button")
+            .forEach((btn) => {
+              btn.addEventListener("click", (e) => {
+                const action = btn.dataset.action;
+                const idx = Number(btn.dataset.idx);
+                handlePostAction(action, idx);
+              });
+            });
+        }
+
+        // generic post action handler (profile context)
+        function handlePostAction(action, idx) {
+          const key = USER_POSTS_PREFIX + currentUser.username;
+          let userPosts = JSON.parse(localStorage.getItem(key)) || [];
+          const post = userPosts[idx];
+          if (!post) return;
+
+          // ensure posts have unique keys (date + username)
+          const uniqueMatch = (p) =>
+            p.date === post.date && p.username === post.username;
+
+          if (action === "like") {
+            post.likes = (post.likes || 0) + 1;
+            // update user posts
+            userPosts[idx] = post;
+            localStorage.setItem(key, JSON.stringify(userPosts));
+            // update global allPosts
+            let allPosts =
+              JSON.parse(localStorage.getItem(ALL_POSTS_KEY)) || [];
+            const gi = allPosts.findIndex((p) => uniqueMatch(p));
+            if (gi !== -1) {
+              allPosts[gi] = post;
+              localStorage.setItem(ALL_POSTS_KEY, JSON.stringify(allPosts));
+            }
+            loadUserPosts();
+            // done
+            return;
+          }
+
+          if (action === "delete") {
+            if (!confirm("Delete this post?")) return;
+            // remove from user posts
+            userPosts = userPosts.filter(
+              (p) => !(p.date === post.date && p.username === post.username)
+            );
+            localStorage.setItem(key, JSON.stringify(userPosts));
+            // remove from global feed
+            let allPosts =
+              JSON.parse(localStorage.getItem(ALL_POSTS_KEY)) || [];
+            allPosts = allPosts.filter(
+              (p) => !(p.date === post.date && p.username === post.username)
+            );
+            localStorage.setItem(ALL_POSTS_KEY, JSON.stringify(allPosts));
+            loadUserPosts();
+            alert("Post deleted.");
+            return;
+          }
+
+          if (action === "comment") {
+            if (!currentUser || !currentUser.username) {
+              alert("Please log in to comment.");
+              return;
+            }
+            const text = prompt("Write your comment:");
+            if (!text) return;
+            post.comments = post.comments || [];
+            post.comments.push({ user: currentUser.username, text });
+            // update storages
+            userPosts[idx] = post;
+            localStorage.setItem(key, JSON.stringify(userPosts));
+            let allPosts =
+              JSON.parse(localStorage.getItem(ALL_POSTS_KEY)) || [];
+            const gi = allPosts.findIndex((p) => uniqueMatch(p));
+            if (gi !== -1) {
+              allPosts[gi] = post;
+              localStorage.setItem(ALL_POSTS_KEY, JSON.stringify(allPosts));
+            }
+            loadUserPosts();
+            return;
+          }
+
+          if (action === "share") {
+            const url = `${location.origin}${
+              location.pathname
+            }#post-${encodeURIComponent(post.username)}-${encodeURIComponent(
+              post.date
+            )}`;
+            navigator.clipboard?.writeText(url).then(
+              () => alert("Link copied to clipboard!"),
+              () => alert("Copy not supported.")
+            );
+            return;
+          }
+        }
+
+        // post new work (profile)
+        document.getElementById("postWork")?.addEventListener("click", () => {
+          const fileEl = document.getElementById("workImage");
+          const textEl = document.getElementById("workText");
+          const file = fileEl?.files[0];
+          const text = textEl?.value.trim() || "";
+
+          if (!file || !text) {
+            alert("Please add an image and a description.");
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            const newPost = {
+              username: currentUser.username,
+              name:
+                currentUser.name ||
+                currentUser.fullname ||
+                currentUser.username,
+              avatar: getAvatar(currentUser),
+              image: reader.result,
+              text,
+              likes: 0,
+              comments: [],
+              date: new Date().toISOString(),
+            };
+
+            // save to user's posts
+            const key = USER_POSTS_PREFIX + currentUser.username;
+            const userPosts = JSON.parse(localStorage.getItem(key)) || [];
+            userPosts.unshift(newPost);
+            localStorage.setItem(key, JSON.stringify(userPosts));
+
+            // save to global feed
+            const allPosts =
+              JSON.parse(localStorage.getItem(ALL_POSTS_KEY)) || [];
+            allPosts.unshift(newPost);
+            localStorage.setItem(ALL_POSTS_KEY, JSON.stringify(allPosts));
+
+            // clear inputs and refresh UI
+            if (fileEl) fileEl.value = "";
+            if (textEl) textEl.value = "";
+            loadUserPosts();
+            alert("Work posted successfully!");
+          };
+          reader.readAsDataURL(file);
+        });
+
+        // save contact info & ensure avatar persist
+        saveBtn?.addEventListener("click", () => {
+          currentUser.email = emailInput.value.trim();
+          currentUser.phone = phoneInput.value.trim();
+          currentUser.bio = bioInput.value.trim();
+          // persist to sc_users and allUsers and currentUser
+          persistUser(currentUser);
+          alert("Profile saved.");
+          renderProfileHeader();
+        });
+
+        // utility to escape HTML when rendering basic strings
+        function escapeHtml(str) {
+          if (!str) return "";
+          return String(str)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;");
+        }
+
+        // nav logout handling (if present)
+        document
+          .querySelector(".logout-link")
+          ?.addEventListener("click", (e) => {
+            e.preventDefault();
+            localStorage.removeItem(CURRENT_KEY);
+            window.location.href = "login.html";
+          });
+
+        // mobile menu toggle (if present)
+        document
+          .getElementById("menu-toggle")
+          ?.addEventListener("click", () => {
+            document.querySelector(".nav")?.classList.toggle("show");
+          });
+
+        // initial render
+        renderProfileHeader();
+        loadUserPosts();
+
+        // ensure profile picture element updates when currentUser changes elsewhere:
+        // listen for storage events (other tab updated profile/currentUser)
+        window.addEventListener("storage", (ev) => {
+          if (
+            ev.key === CURRENT_KEY ||
+            ev.key === SC_USERS_KEY ||
+            ev.key === ALL_POSTS_KEY
+          ) {
+            // re-resolve and re-render
+            rawCurrent =
+              JSON.parse(localStorage.getItem(CURRENT_KEY)) || rawCurrent;
+            currentUser = resolveCurrentUser(rawCurrent);
+            renderProfileHeader();
+            loadUserPosts();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>
